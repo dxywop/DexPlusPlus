@@ -48,4 +48,8 @@ Every donation is highly apreciated, this is compeletely optional.
 - [Chillz](https://github.com/AZYsGithub) – Dex++ Maintainer  
 - [Cazan](https://github.com/Cazzanos) – Helped me develop the Model Viewer  
 - [Moon](https://github.com/LorekeeperZinnia/Dex) – Original Dex Explorer  
+<<<<<<< HEAD
 - [Toon](https://github.com/Toon-arch) – Contributor and IY's Dex parts and components
+=======
+- [Toon](https://github.com/Toon-arch) - IY Dex module source and parts
+>>>>>>> 2f5be406fac8aacdd08153a289154560ce0fb21b
