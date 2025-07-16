@@ -3,7 +3,7 @@
 	
 	Ported from Serversided to Clientsided.
 ]]
-loadstring = (game:GetService("RunService"):IsStudio() and require(script.Parent.Loadstring)) or loadstring
+local loadstring = (game:GetService("RunService"):IsStudio() and require(script.Parent.Loadstring)) or loadstring
 -- Common Locals
 local Main,Lib,Apps,Settings -- Main Containers
 local Explorer, Properties, ScriptViewer, SecretServicePanel, Notebook -- Major Apps

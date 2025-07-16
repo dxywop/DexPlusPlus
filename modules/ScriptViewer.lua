@@ -3,7 +3,7 @@
 	
 	A script viewer that is basically a notepad
 ]]
-loadstring = (game:GetService("RunService"):IsStudio() and require(script.Parent.Loadstring)) or loadstring
+local loadstring = (game:GetService("RunService"):IsStudio() and require(script.Parent.Loadstring)) or loadstring
 -- Common Locals
 local Main,Lib,Apps,Settings -- Main Containers
 local Explorer, Properties, ScriptViewer, Notebook -- Major Apps
@@ -77,8 +77,6 @@ local function main()
 			source = source .. "-- Took "..tostring(math.floor( (tick() - oldtick) * 100) / 100).."s to decompile.\n"
 			source = source .. "-- Executor: "..executorName.." ("..executorVersion..")\n\n"
 			
-			
-			source = source .. "-- // local script = "..getPath(scr).."\n"
 			source = source .. decompiled
 			
 			oldtick = nil

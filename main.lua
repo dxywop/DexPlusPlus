@@ -9,7 +9,38 @@
 
 local oldgame = oldgame or game
 
-local cloneref = cloneref or function(...) return ... end
+cloneref = cloneref or function(ref)
+	if not getreg then return ref end
+	
+	local InstanceList
+	
+	local a = Instance.new("Part")
+	for _, c in pairs(getreg()) do
+		if type(c) == "table" and #c then
+			if rawget(c, "__mode") == "kvs" then
+				for d, e in pairs(c) do
+					if e == a then
+						InstanceList = c
+						break
+					end
+				end
+			end
+		end
+	end
+	local f = {}
+	function f.invalidate(g)
+		if not InstanceList then
+			return
+		end
+		for b, c in pairs(InstanceList) do
+			if c == g then
+				InstanceList[b] = nil
+				return g
+			end
+		end
+	end
+	return f.invalidate
+end
 -- Main vars
 local Main, Explorer, Properties, ScriptViewer, Console, SaveInstance, ModelViewer, SecretServicePanel, DefaultSettings, Notebook, Serializer, Lib local ggv = getgenv or nil
 local API, RMD
@@ -32,14 +63,14 @@ DefaultSettings = (function()
 		Properties = {
 			_Recurse = true,
 			MaxConflictCheck = 50,
-			ShowDeprecated = false,
-			ShowHidden = true,
+			ShowDeprecated = true,
+			ShowHidden = false,
 			ClearOnFocus = false,
 			LoadstringInput = true,
 			NumberRounding = 3,
-			ShowAttributes = false,
+			ShowAttributes = true,
 			MaxAttributes = 50,
-			ScaleType = 1 -- 0 Full Name Shown, 1 Equal Halves
+			ScaleType = 0 -- 0 Full Name Shown, 1 Equal Halves
 		},
 		Theme = {
 			_Recurse = true,
@@ -89,7 +120,13 @@ DefaultSettings = (function()
 		Window = {
 			TitleOnMiddle = false,
 			Transparency = .2
-		}
+		},
+		RemoteBlockWriteAttribute = false, -- writes attribute to remote instance if remote is blocked/unblocked
+		ClassIcon = "NewDark",
+		-- What available icons:
+		-- > Vanilla3
+		-- > Old
+		-- > NewDark
 	}
 end)()
 
@@ -132,26 +169,12 @@ end
 
 Main = (function()
 	local Main = {}
-	
-	--[[
-	-- Original Backup
-	
-	Main.ModuleList = {"Explorer","Properties","ScriptViewer"}
-	Main.Elevated = false
-	Main.MissingEnv = {}
-	Main.Version = "Beta 1.0.0"
-	Main.Mouse = plr:GetMouse()
-	Main.AppControls = {}
-	Main.Apps = Apps
-	Main.MenuApps = {}
-	Main.GitRepoName = "LorekeeperZinnia/Dex"
-	]]
 
 	Main.ModuleList = {"Explorer","Properties","ScriptViewer","Console","SaveInstance","ModelViewer", "SecretServicePanel"}
 	Main.Elevated = false
 	Main.AllowDraggableOnMobile = true
 	Main.MissingEnv = {}
-	Main.Version = "Beta 1.5.0"
+	Main.Version = "2.0"
 	Main.Mouse = plr:GetMouse()
 	Main.AppControls = {}
 	Main.Apps = Apps
@@ -164,6 +187,104 @@ Main = (function()
 		Menu = 100000,
 		Core = 101000
 	}
+	
+	Main.LoadAdonisBypass = function()
+		-- skidded off reddit :pensive:
+		local getinfo = getinfo or debug.getinfo
+		local DEBUG = false
+		local Hooked = {}
+
+		local Detected, Kill
+
+		setthreadidentity(2)
+
+		for i, v in getgc(true) do
+			if typeof(v) == "table" then
+				local DetectFunc = rawget(v, "Detected")
+				local KillFunc = rawget(v, "Kill")
+
+				if typeof(DetectFunc) == "function" and not Detected then
+					Detected = DetectFunc
+
+					local Old; Old = hookfunction(Detected, function(Action, Info, NoCrash)
+						if Action ~= "_" then
+							if DEBUG then
+								warn(`Adonis AntiCheat flagged\nMethod: {Action}\nInfo: {Info}`)
+							end
+						end
+
+						return true
+					end)
+
+					table.insert(Hooked, Detected)
+				end
+
+				if rawget(v, "Variables") and rawget(v, "Process") and typeof(KillFunc) == "function" and not Kill then
+					Kill = KillFunc
+					local Old; Old = hookfunction(Kill, function(Info)
+						if DEBUG then
+							warn(`Adonis AntiCheat tried to kill (fallback): {Info}`)
+						end
+					end)
+
+					table.insert(Hooked, Kill)
+				end
+			end
+		end
+
+		local Old; Old = hookfunction(getrenv().debug.info, newcclosure(function(...)
+			local LevelOrFunc, Info = ...
+
+			if Detected and LevelOrFunc == Detected then
+				if DEBUG then
+					warn(`Adonis AntiCheat sanity check detected and broken`)
+				end
+
+				return coroutine.yield(coroutine.running())
+			end
+
+			return Old(...)
+		end))
+		-- setthreadidentity(9)
+		setthreadidentity(7)
+	end
+	
+	Main.LoadGCBypass = function()
+		loadstring(game:HttpGet("https://raw.githubusercontent.com/secretisadev/Babyhamsta_Backup/refs/heads/main/Universal/Bypasses.lua", true))()
+	end
+	
+	Main.GetRandomString = function()
+		local output = ""
+		for i = 2, 25 do
+			output = output .. string.char(math.random(1,250))
+		end
+		
+		return output
+	end
+	
+	Main.SecureGui = function(gui)
+		--warn("Secured: "..gui.Name)
+		gui.Name = Main.GetRandomString()
+		-- service already using cloneref
+		if gethui then
+			gui.Parent = gethui()
+		elseif syn and syn.protect_gui then
+			syn.protect_gui(gui)
+			gui.Parent = service.CoreGui
+		elseif protect_gui then
+			protect_gui(gui)
+			gui.Parent = service.CoreGui
+		elseif protectgui then
+			protectgui(gui)
+			gui.Parent = service.CoreGui
+		else
+			if Main.Elevated then
+				gui.Parent = service.CoreGui
+			else
+				gui.Parent = service.Players.LocalPlayer:WaitForChild("PlayerGui")
+			end
+		end
+	end
 
 	Main.GetInitDeps = function()
 		return {
@@ -316,7 +437,7 @@ Main = (function()
 		env.listfiles = listfiles
 		env.loadfile = loadfile
 		env.saveinstance = saveinstance or (function()
-			warn("No built-in saveinstance exists, using SynSaveInstance and wrapper...")
+			--warn("No built-in saveinstance exists, using SynSaveInstance and wrapper...")
 			if game:GetService("RunService"):IsStudio() then return end
 			local Params = {
 				RepoURL = "https://raw.githubusercontent.com/luau/SynSaveInstance/main/",
@@ -336,12 +457,16 @@ Main = (function()
 		end)()
 
 		-- debug
-		env.getupvalues = debug.getupvalues or getupvals
-		env.getconstants = debug.getconstants or getconsts
+		env.getupvalues = debug.getupvalues or getupvalues or getupvals
+		env.getconstants = debug.getconstants or getconstants or getconsts
 		env.islclosure = islclosure or is_l_closure
 		env.checkcaller = checkcaller
 		env.getreg = getreg
 		env.getgc = getgc
+		
+		-- hooks
+		env.hookfunction = hookfunction
+		env.hookmetamethod = hookmetamethod
 
 		-- other
 		env.setfflag = setfflag
@@ -367,10 +492,10 @@ Main = (function()
 		
 		env.decompile = decompile or (function()
 			-- by lovrewe
-			warn("No built-in decompiler exists, using Konstant decompiler...")
+			--warn("No built-in decompiler exists, using Konstant decompiler...")
 			--assert(getscriptbytecode, "Exploit not supported.")
 
-			if not env.getscriptbytecode then warn('Konstant decompiler is not supported. "getscriptbytecode" is missing.') return end
+			if not env.getscriptbytecode then --[[warn('Konstant decompiler is not supported. "getscriptbytecode" is missing.')]] return end
 
 			local API = "http://api.plusgiant5.com"
 
@@ -412,12 +537,7 @@ Main = (function()
 				return call("/konstant/decompile", scriptPath)
 			end
 
-			local function disassemble(scriptPath)
-				return call("/konstant/disassemble", scriptPath)
-			end
-
 			getgenv().decompile = decompile
-			getgenv().disassemble = disassemble
 			
 			env.decompile = decompile
 			return decompile
@@ -433,7 +553,7 @@ Main = (function()
 	end
 
 	Main.IncompatibleTest = function()
-		local function incompatibleMessage(reason, tolerated)
+		--[[local function incompatibleMessage(reason, tolerated)
 			local msg = Instance.new("ScreenGui")
 			msg.IgnoreGuiInset = true
 			local t = Instance.new("TextLabel",msg)
@@ -445,14 +565,12 @@ Main = (function()
 			t.TextScaled = true
 			t.Text = "\n\n\n\n\n\n\n\nHello Skidsploit user,\nZinnia, Chillz and the Secret Service does not approve of Dex being used on your skidsploit.\nPlease consider getting something better.\n\nIncompatible Reason: "..reason.."\n\n\n\n\n\n\n\n"
 			
-			--[[
 			-- This sound wont work!!!
 			local sound = Instance.new("Sound",msg)
 			sound.SoundId = "rbxassetid://175964948"
 			sound.Volume = 1
 			sound.Looped = true
 			sound.Playing = true
-			]]
 			
 			if not tolerated then
 				Lib.ShowGui(msg)
@@ -492,7 +610,7 @@ Main = (function()
 		
 		local second = false
 		coroutine.wrap(function() local start = tick() wait(5) if tick() - start < 0.1 or not second then incompatibleMessage("SKIDDED YIELDING") end end)()
-		second = true
+		second = true]]
 	end
 
 	Main.LoadSettings = function()
@@ -528,7 +646,8 @@ Main = (function()
 		recur(DefaultSettings,Settings)
 	end
 
-	Main.FetchAPI = function()
+	Main.FetchAPI = function(callbackiflong, callbackiftoolong, XD)
+		local downloaded = false
 		local api,rawAPI
 		if Main.Elevated then
 			if Main.LocalDepsUpToDate() then
@@ -539,6 +658,17 @@ Main = (function()
 					Main.DepsVersionData[1] = ""
 				end
 			end
+			task.spawn(function()
+				task.wait(10)
+				if not downloaded and callbackiflong then callbackiflong() end
+
+				task.wait(20) -- 30
+				if not downloaded and callbackiftoolong then callbackiftoolong() end
+
+				task.wait(30) -- 60
+				if not downloaded and XD then XD() end
+			end)
+			-- lmfao async makes it work to load big file
 			rawAPI = rawAPI or game:HttpGet("http://setup.roblox.com/"..Main.RobloxVersion.."-API-Dump.json")
 		else
 			if script:FindFirstChild("API") then
@@ -547,6 +677,8 @@ Main = (function()
 				error("NO API EXISTS")
 			end
 		end
+		downloaded = true
+		
 		Main.RawAPI = rawAPI
 		api = service.HttpService:JSONDecode(rawAPI)
 
@@ -791,12 +923,7 @@ Main = (function()
 		return {Classes = classes, Enums = enums, PropertyOrders = propertyOrders}
 	end
 
-	Main.ShowGui = function(gui)
-		if env.protectgui then
-			env.protectgui(gui)
-		end
-		gui.Parent = Main.GuiHolder
-	end
+	Main.ShowGui = Main.SecureGui
 
 	Main.CreateIntro = function(initStatus) -- TODO: Must theme and show errors
 		local gui = create({
@@ -810,7 +937,7 @@ Main = (function()
 			{8,"Frame",{BackgroundColor3=Color3.new(0.20392157137394,0.20392157137394,0.20392157137394),BorderSizePixel=0,Name="ProgressBar",Parent={3},Position=UDim2.new(0,110,0,145),Size=UDim2.new(0,0,0,4),}},
 			{9,"Frame",{BackgroundColor3=Color3.new(0.2392156869173,0.56078433990479,0.86274510622025),BorderSizePixel=0,Name="Bar",Parent={8},Size=UDim2.new(0,0,1,0),}},
 			{10,"ImageLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Image="rbxassetid://2764171053",ImageColor3=Color3.new(0.17647059261799,0.17647059261799,0.17647059261799),Parent={8},ScaleType=1,Size=UDim2.new(1,0,1,0),SliceCenter=Rect.new(2,2,254,254),}},
-			{11,"TextLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Font=3,Name="Creator",Parent={2},Position=UDim2.new(1,-110,1,-20),Size=UDim2.new(0,105,0,20),Text="Developed by Chillz, Originally Moon.",TextColor3=Color3.new(1,1,1),TextSize=14,TextXAlignment=1,}},
+			{11,"TextLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Font=3,Name="Creator",Parent={2},Position=UDim2.new(1,-110,1,-20),Size=UDim2.new(0,105,0,20),Text="Developed by Chillz.",TextColor3=Color3.new(1,1,1),TextSize=14,TextXAlignment=1,}},
 			{12,"UIGradient",{Parent={11},Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,1,0),NumberSequenceKeypoint.new(1,1,0),}),}},
 			{13,"TextLabel",{BackgroundColor3=Color3.new(1,1,1),BackgroundTransparency=1,Font=3,Name="Version",Parent={2},Position=UDim2.new(1,-110,1,-35),Size=UDim2.new(0,105,0,20),Text=Main.Version,TextColor3=Color3.new(1,1,1),TextSize=14,TextXAlignment=1,}},
 			{14,"UIGradient",{Parent={13},Transparency=NumberSequence.new({NumberSequenceKeypoint.new(0,1,0),NumberSequenceKeypoint.new(1,1,0),}),}},
@@ -1195,9 +1322,16 @@ Main = (function()
 		Main.LargeIcons:SetDict({
 			Explorer = 0, Properties = 1, Script_Viewer = 2, Watcher = 3, Output = 4
 		})
+		
+		-- Loading bypasses
+		intro.SetProgress("Loading Adonis Bypass",0.1)
+		pcall(Main.LoadAdonisBypass)
+		
+		intro.SetProgress("Loading GC Bypass",0.2)
+		pcall(Main.LoadGCBypass)
 
 		-- Fetch version if needed
-		intro.SetProgress("Fetching Roblox Version",0.2)
+		intro.SetProgress("Fetching Roblox Version",0.3)
 		if Main.Elevated then
 			local fileVer = Lib.ReadFile("dex/deps_version.dat")
 			Main.ClientVersion = Version()
@@ -1207,12 +1341,23 @@ Main = (function()
 					Main.RobloxVersion = Main.DepsVersionData[2]
 				end
 			end
-			Main.RobloxVersion = Main.RobloxVersion or game:HttpGet("http://setup.roblox.com/versionQTStudio")
+			
+			Main.RobloxVersion = Main.RobloxVersion or oldgame:HttpGet("https://clientsettings.roblox.com/v2/client-version/WindowsStudio64/channel/LIVE"):match("(version%-[%w]+)")
 		end
 
 		-- Fetch external deps
 		intro.SetProgress("Fetching API",0.35)
-		API = Main.FetchAPI()
+		API = Main.FetchAPI(
+			function()
+				intro.SetProgress("Fetching API, Please Wait.",0.4)
+			end,
+			function()
+				intro.SetProgress("Fetching API, Please Wait Due To Huge API File To Download.",0.45)
+			end,
+			function()
+				intro.SetProgress("Fetching API, LOL STILL DOWNlOADING? bad wifi xD",0.475)
+			end
+		)
 		Lib.FastWait()
 		intro.SetProgress("Fetching RMD",0.5)
 		RMD = Main.FetchRMD()

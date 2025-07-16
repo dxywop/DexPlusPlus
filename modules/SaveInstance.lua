@@ -98,66 +98,36 @@ local function main()
 		listlayout.Padding = UDim.new(0, 10)
 
 		-- Textbox
-		local textbox = Lib.ViewportTextBox.new()
+		local textbox = Instance.new("TextBox") -- replaced cuz why Moon make every inputs only work on mouse/pc users >:( 
+		textbox.BackgroundColor3 = Settings.Theme.TextBox
+		textbox.BorderColor3 = Settings.Theme.Outline3
+		textbox.ClearTextOnFocus = false
+		textbox.TextColor3 = Settings.Theme.Text
+		textbox.Font = Enum.Font.SourceSans
+		textbox.TextSize = 14
+		textbox.ZIndex = 2
 
-		textbox.Gui.Parent = frame.Gui
+		textbox.Parent = frame.Gui
 		if sizeX and type(sizeX) == "number" then
-			textbox.Gui.Size = UDim2.new(0,sizeX,0,15)
+			textbox.Size = UDim2.new(0,sizeX,0,15)
 		else
-			textbox.Gui.Size = UDim2.new(0,45,0,15)
+			textbox.Size = UDim2.new(0,45,0,15)
 		end
 		
-		textbox.Gui.AutomaticSize = Enum.AutomaticSize.X
-		textbox.TextBox.AutomaticSize = Enum.AutomaticSize.X
+		frame.Gui.AutomaticSize = Enum.AutomaticSize.X
+		textbox.AutomaticSize = Enum.AutomaticSize.X
 
 		-- Label
 		local label = Lib.Label.new()
 
-		label.Gui.Parent = frame.Gui
-		label.Gui.Size = UDim2.new(1, 0,1, -15)
-		label.Gui.Text = title
+		label.Parent = frame.Gui
+		label.Size = UDim2.new(1, 0,1, -15)
+		label.Text = title
 		label.TextTruncate = Enum.TextTruncate.AtEnd
 
-		textbox:SetText(default)
+		textbox.Text = default
 
-		return textbox
-	end
-	
-	local function AddDropdown(title, items, default, sizeX)
-		local frame = Lib.Frame.new()
-		frame.Gui.Parent = ListFrame
-		frame.Gui.Transparency = 1
-		frame.Gui.Size = UDim2.new(1,0,0,20)
-
-		local listlayout = Instance.new("UIListLayout")
-		listlayout.Parent = frame.Gui
-		listlayout.FillDirection = Enum.FillDirection.Horizontal
-		listlayout.HorizontalAlignment = Enum.HorizontalAlignment.Left
-		listlayout.VerticalAlignment = Enum.VerticalAlignment.Center
-		listlayout.Padding = UDim.new(0, 10)
-
-		-- Textbox
-		local dropdown = Lib.ViewportTextBox.new()
-
-		dropdown.Gui.Parent = frame.Gui
-		if sizeX and type(sizeX) == "number" then
-			dropdown.Gui.Size = UDim2.new(0,sizeX,0,15)
-		else
-			dropdown.Gui.Size = UDim2.new(0,65,0,15)
-		end
-
-		-- Label
-		local label = Lib.Label.new()
-		
-		label.Gui.Parent = frame.Gui
-		label.Gui.Size = UDim2.new(1, 0,1, -15)
-		label.Gui.Text = title
-		label.TextTruncate = Enum.TextTruncate.AtEnd
-
-		dropdown:SetOptions(items)
-		dropdown:SetSelected(default)
-
-		return dropdown
+		return {TextBox = textbox}
 	end
 	
 	SaveInstance.Init = function()
