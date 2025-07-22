@@ -1324,11 +1324,11 @@ Main = (function()
 		})
 		
 		-- Loading bypasses
-		intro.SetProgress("Loading Adonis Bypass",0.1)
+		--[[intro.SetProgress("Loading Adonis Bypass",0.1)
 		pcall(Main.LoadAdonisBypass)
 		
 		intro.SetProgress("Loading GC Bypass",0.2)
-		pcall(Main.LoadGCBypass)
+		pcall(Main.LoadGCBypass)]]
 
 		-- Fetch version if needed
 		intro.SetProgress("Fetching Roblox Version",0.3)
