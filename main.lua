@@ -1324,7 +1324,7 @@ Main = (function()
 		})
 		
 		-- Loading bypasses
-		--[[intro.SetProgress("Loading Adonis Bypass",0.1)
+		intro.SetProgress("Loading Adonis Bypass",0.1)
 		pcall(Main.LoadAdonisBypass)
 		
 		intro.SetProgress("Loading GC Bypass",0.2)
